@@ -1,0 +1,26 @@
+{
+  "name": "cognito-mfa",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "check": "export AWS_PROFILE=your_name && node src/check-mfa.js",
+    "start:all": "export AWS_PROFILE=your_name && node --trace-warnings src/scripts/massive/activation-mfa_TOTP-OTP.js",
+    "start:all-TOTP": "export AWS_PROFILE=your_name && node --trace-warnings src/scripts/massive/activation-mfa_TOTP.js",
+    "start:su-required-all": "export AWS_PROFILE=your_name && node --trace-warnings src/scripts/single-user/mfa-su-required-TOTP-OTP.js",
+    "start:su-required-TOTP": "export AWS_PROFILE=your_name && node --trace-warnings src/scripts/single-user/mfa-su-required-TOTP.js",
+    "start:su-optional-all": "export AWS_PROFILE=your_name && node --trace-warnings src/scripts/single-user/mfa-su-optional-TOTP-OTP.js",
+    "start:su-optional-TOTP": "export AWS_PROFILE=your_name && node --trace-warnings src/scripts/single-user/mfa-su-optional-TOTP.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.774.0",
+    "crypto-js": "^4.2.0",
+    "otplib": "^12.0.1",
+    "qrcode": "^1.5.4",
+    "readline": "^1.3.0",
+    "xlsx": "^0.18.5"
+  }
+}
