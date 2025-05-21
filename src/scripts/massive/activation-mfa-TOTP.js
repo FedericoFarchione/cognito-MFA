@@ -77,14 +77,25 @@ const activateMFAForUser = async (user) => {
 const run = async () => {
   try {
     const users = await checkUsers();
-    const userDataPromises = users.map(activateMFAForUser);
-
-    const userData = (await Promise.all(userDataPromises)).filter(
-      (user) => user !== null
+    const userData = await pMap(
+      users,
+      async (user) => {
+        try {
+          const result = await activateMFAForUser(user);
+          if (result !== null) {
+            return result;
+          }
+        } catch (err) {
+          console.error(`❌ Failed ${user.Username}:`, err.message);
+          return null;
+        }
+      },
+      { concurrency: 5 }
     );
-    if (userData.length > 0) {
+    const filteredData = userData.filter((user) => user !== null);
+    if (filteredData.length > 0) {
       const workbook = XLSX.utils.book_new();
-      const worksheet = XLSX.utils.json_to_sheet(userData, {
+      const worksheet = XLSX.utils.json_to_sheet(filteredData, {
         fields: ["email", "password", "qrCode", "secretKey"],
       });
 

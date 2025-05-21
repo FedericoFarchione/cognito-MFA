@@ -7,24 +7,40 @@ const { USER_POOL_ID, REGION } = require("./config/config");
 
 const client = new CognitoIdentityProviderClient({ region: REGION });
 
-const checkMFAStatus = async (userPoolId) => {
+const checkMFAStatus = async (
+  userPoolId,
+  paginationToken = undefined,
+  allUsers = []
+) => {
   try {
     const listUsersCommand = new ListUsersCommand({
       UserPoolId: userPoolId,
       Limit: 60,
+      PaginationToken: paginationToken,
     });
+
     const listUsersResponse = await client.send(listUsersCommand);
 
-    const usersData = await Promise.all(
-      listUsersResponse.Users.map(async (user) => {
-        return await checkUserMFADetails(userPoolId, user.Username);
-      })
+    const usersWithDetails = await Promise.all(
+      listUsersResponse.Users.map((user) =>
+        checkUserMFADetails(userPoolId, user.Username)
+      )
     );
 
-    return usersData;
+    const updatedUsers = [...allUsers, ...usersWithDetails];
+
+    if (listUsersResponse.PaginationToken) {
+      return checkMFAStatus(
+        userPoolId,
+        listUsersResponse.PaginationToken,
+        updatedUsers
+      );
+    } else {
+      return updatedUsers;
+    }
   } catch (error) {
     console.error("Errore nel recupero degli utenti:", error);
-    return [];
+    return allUsers;
   }
 };
 

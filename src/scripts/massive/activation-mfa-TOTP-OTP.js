@@ -2,7 +2,7 @@ const { checkUsers } = require("../../check-mfa");
 const { generateRandomPassword } = require("../../helpers/generate-pass");
 const { generateQRCode } = require("../../helpers/generate-qr");
 const XLSX = require("xlsx");
-
+const pMap = require("p-map");
 const {
   getUserEmail,
   enableUser,
@@ -79,15 +79,26 @@ const run = async () => {
   try {
     const users = await checkUsers();
     await setMFAconfig("OFF");
-    const userDataPromises = users.map(activateMFAForUser);
-
-    const userData = (await Promise.all(userDataPromises)).filter(
-      (user) => user !== null
+    const userData = await pMap(
+      users,
+      async (user) => {
+        try {
+          const result = await activateMFAForUser(user);
+          if (result !== null) {
+            return result;
+          }
+        } catch (err) {
+          console.error(`❌ Failed ${user.Username}:`, err.message);
+          return null;
+        }
+      },
+      { concurrency: 5 }
     );
+    const filteredData = userData.filter((user) => user !== null);
     await setMFAconfig("ON");
-    if (userData.length > 0) {
+    if (filteredData.length > 0) {
       const workbook = XLSX.utils.book_new();
-      const worksheet = XLSX.utils.json_to_sheet(userData, {
+      const worksheet = XLSX.utils.json_to_sheet(filteredData, {
         fields: ["email", "password", "qrCode", "secretKey"],
       });
       XLSX.utils.book_append_sheet(workbook, worksheet, "Users MFA");
